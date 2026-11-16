@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shipments_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-shipments_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shipments_app} -d ${POSTGRES_DB:-shipments_erp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [private]
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    networks: [private]
+volumes:
+  postgres_data:
+networks:
+  private:
+    driver: bridge

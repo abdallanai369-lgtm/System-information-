@@ -1,1 +1,0 @@
-Run `alembic revision --autogenerate -m "initial schema"` then review migration and commit it. Apply with `alembic upgrade head`.

@@ -1,0 +1,18 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const html=fs.readFileSync(__dirname+'/../index.html','utf8');
+assert(html.includes('Smart Operations Control Tower'));
+assert(html.includes('COD غير مورّد'));
+assert(html.includes('تجاوز SLA'));
+assert(html.includes('تصدير تقرير الاستثناءات CSV'));
+const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const ids=['kpis','exceptionRows','codSummary','gapText','settlements','branchRows','recommendations','shipmentRows','search','severity','type','courierSelect','periodSelect','periodFrom','periodTo'];
+const elements={};ids.forEach(id=>elements[id]={innerHTML:'',textContent:'',value:''});
+elements.search.value='';elements.severity.value='';elements.type.value='';elements.periodSelect.value='week';
+const sandbox={document:{getElementById:id=>elements[id],createElement:()=>({click(){},set href(v){},set download(v){}})},window:{},localStorage:{getItem:()=>null,setItem(){}},URL:{createObjectURL:()=>'',revokeObjectURL(){}},Blob:function(){},alert(){},console};
+vm.createContext(sandbox);vm.runInContext(script,sandbox);
+assert(elements.kpis.innerHTML.includes('فجوة تحتاج مراجعة'));
+assert(elements.exceptionRows.innerHTML.includes('SHP-81042'));
+assert(elements.codSummary.innerHTML.includes('٦٬٢٥٠'));
+assert(elements.shipmentRows.innerHTML.includes('SHP-81150'));
+elements.severity.value='حرج';sandbox.renderExceptions();assert(elements.exceptionRows.innerHTML.includes('SHP-81042'));assert(!elements.exceptionRows.innerHTML.includes('SHP-81103'));
+console.log('PASS: control tower render, COD reconciliation metrics, exception filtering, shipment list');
